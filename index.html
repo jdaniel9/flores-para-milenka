@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emily - Efecto Floral</title>
+    <!-- Importamos la fuente de Google de tu código base -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos base */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- ESTILOS PARA EL SOBRE (NUEVA VERSIÓN) --- */
+        #card-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: opacity 1s ease-in-out 0.8s; /* Se desvanece con retardo */
+        }
+
+        #card {
+            width: 300px;
+            height: 190px;
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px; /* Habilita la perspectiva 3D para la animación */
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .envelope-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #f0e8d9;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .letter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #555;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            /* Padding ajustado para bajar el texto aún más */
+            padding: 60px 10px 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1) inset;
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: #e6dac8;
+            /* Usamos clip-path para crear el triángulo de forma segura */
+            clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+            transform-origin: top;
+            transition: transform 0.8s ease-in-out;
+            z-index: 5;
+        }
+
+        .heart-icon {
+            position: absolute;
+            top: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            /* Color del corazón cambiado a amarillo */
+            color: #FFD700;
+            z-index: 6;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+            transition: opacity 0.5s ease;
+        }
+
+        /* Estado "abierto" del sobre */
+        #card.open .envelope-flap {
+            transform: rotateX(180deg);
+        }
+        #card.open .heart-icon {
+            opacity: 0;
+        }
+        
+        .open-text {
+            margin-top: 30px;
+            color: #aaa;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            animation: fadeIn 2s ease-in-out;
+        }
+        
+        #card-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* --- FIN DE ESTILOS DEL SOBRE --- */
+
+        /* Contenedor principal, inicialmente oculto */
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out 0.5s;
+        }
+
+        .main-container.visible { opacity: 1; }
+
+        .name-wrapper {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+        
+        .name-wrapper::before {
+            content: '';
+            position: absolute; top: 50%; left: 50%; width: 400%; padding-bottom: 400%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 190, 80, 0.6) 0%, rgba(255, 165, 0, 0.4) 30%, rgba(0, 0, 0, 0) 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            animation: pulse-light 5s infinite ease-in-out;
+        }
+
+        .name {
+            font-size: clamp(3rem, 20vw, 12rem);
+            font-weight: 700;
+            margin: 0;
+            color: #FFD700;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 165, 0, 0.7), 0 0 25px rgba(255, 140, 0, 0.6);
+        }
+
+        #particle-container, #floor-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='18' fill='rgba(255,215,0,0.8)'/%3E%3Ccircle cx='25' cy='25' r='8' fill='rgba(139,69,19,0.9)'/%3E%3C/svg%3E");
+            background-size: contain; background-repeat: no-repeat; opacity: 0; will-change: transform, opacity; 
+        }
+
+        #floor-container {
+            height: 15vh; bottom: 0; top: auto; background: linear-gradient(to top, rgba(255, 215, 0, 0.1), transparent);
+        }
+
+        .floor-sunflower {
+            position: absolute; bottom: 0;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23f9a602'><path transform='rotate(15 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/><path transform='rotate(75 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/><path transform='rotate(135 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/><path transform='rotate(195 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/><path transform='rotate(255 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/><path transform='rotate(315 50 50)' d='M50 45 C 30 10, 70 10, 50 45'/></g><g fill='%23ffc500'><path transform='rotate(45 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/><path transform='rotate(105 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/><path transform='rotate(165 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/><path transform='rotate(225 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/><path transform='rotate(285 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/><path transform='rotate(345 50 50)' d='M50 40 C 35 15, 65 15, 50 40'/></g><circle cx='50' cy='50' r='17' fill='%23583922'/></svg>");
+            background-size: contain; background-repeat: no-repeat; transform-origin: bottom center; animation: sway linear infinite;
+        }
+
+        @keyframes sway { 0%, 100% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } }
+        @keyframes pulse-light { 0%, 100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; } 50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- Escena inicial del sobre -->
+    <div id="card-overlay">
+        <div id="card">
+            <div class="envelope-back"></div>
+            <div class="letter">
+                <p>No pude enviarte unas flores en físico,<br>espero te gusten estas.</p>
+            </div>
+            <div class="envelope-flap"></div>
+            <div class="heart-icon">
+                <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path clip-rule="evenodd" fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path></svg>
+            </div>
+        </div>
+        <p class="open-text">Haz Clic Para Abrir</p>
+    </div>
+
+    <!-- Contenedor principal de la animación (inicialmente oculto) -->
+    <div class="main-container">
+        <div class="name-wrapper">
+            <h1 class="name">EMILY</h1>
+        </div>
+        <div id="particle-container"></div>
+        <div id="floor-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cardOverlay = document.getElementById('card-overlay');
+            const card = document.getElementById('card');
+            const mainContainer = document.querySelector('.main-container');
+
+            let isCardOpen = false;
+
+            cardOverlay.addEventListener('click', function() {
+                if (isCardOpen) return;
+                isCardOpen = true;
+
+                // 1. Abre el sobre
+                card.classList.add('open');
+
+                // 2. Espera a que termine la animación de apertura
+                setTimeout(() => {
+                    // 3. Oculta el sobre y muestra la animación principal
+                    cardOverlay.classList.add('hidden');
+                    mainContainer.classList.add('visible');
+                    
+                    // 4. INICIA LA ANIMACIÓN DE FLORES
+                    initFloralAnimation();
+                }, 1200); // Este tiempo debe ser un poco mayor que la animación de apertura
+            });
+
+            function initFloralAnimation() {
+                const particleContainer = document.getElementById('particle-container');
+                const nameElement = document.querySelector('.name');
+                const numberOfParticles = 80;
+                const particles = [];
+                const floorContainer = document.getElementById('floor-container');
+                const numberOfFloorFlowers = 25; 
+
+                for (let i = 0; i < numberOfFloorFlowers; i++) {
+                    const sunflower = document.createElement('div');
+                    sunflower.classList.add('floor-sunflower');
+                    const size = Math.random() * 40 + 20; 
+                    sunflower.style.width = `${size}px`;
+                    sunflower.style.height = `${size}px`;
+                    sunflower.style.left = `${Math.random() * 100}%`;
+                    sunflower.style.bottom = `-${Math.random() * (size / 3)}px`;
+                    sunflower.style.animationDuration = `${Math.random() * 4 + 3}s`; 
+                    sunflower.style.animationDelay = `${Math.random() * 3}s`;
+                    floorContainer.appendChild(sunflower);
+                }
+
+                function createParticle() {
+                    const particleElement = document.createElement('div');
+                    particleElement.classList.add('particle');
+                    const size = Math.random() * 20 + 10; 
+                    particleElement.style.width = `${size}px`;
+                    particleElement.style.height = `${size}px`;
+                    const nameRect = nameElement.getBoundingClientRect();
+                    const particleData = {
+                        element: particleElement,
+                        x: nameRect.left + Math.random() * nameRect.width,
+                        y: nameRect.top + Math.random() * nameRect.height,
+                        vx: (Math.random() - 0.5) * 1.5,
+                        vy: Math.random() * 1 + 0.5,
+                        angle: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 2,
+                        life: 1,
+                        decay: Math.random() * 0.01 + 0.005,
+                    };
+                    particles.push(particleData);
+                    particleContainer.appendChild(particleElement);
+                }
+
+                for (let i = 0; i < numberOfParticles; i++) {
+                    createParticle();
+                }
+
+                function animate() {
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.angle += p.rotationSpeed;
+                        p.life -= p.decay;
+                        if (p.life <= 0) {
+                            const nameRect = nameElement.getBoundingClientRect();
+                            p.x = nameRect.left + Math.random() * nameRect.width;
+                            p.y = nameRect.top + Math.random() * nameRect.height;
+                            p.vx = (Math.random() - 0.5) * 1.5;
+                            p.vy = Math.random() * 1 + 0.5;
+                            p.angle = Math.random() * 360;
+                            p.life = 1;
+                        }
+                        const opacity = Math.max(0, p.life);
+                        p.element.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.angle}deg)`;
+                        p.element.style.opacity = opacity;
+                    }
+                    requestAnimationFrame(animate);
+                }
+                
+                animate();
+            }
+        });
+    </script>
+
+</body>
+</html>
+
